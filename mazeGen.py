@@ -1,44 +1,75 @@
-import random,time
+import random, time, pygame, sys
 
+sys.setrecursionlimit(10**6)
+
+pygame.init()
+screen = pygame.display.set_mode((800,800))
+
+# *** global maze gen variables ***
+allNodes = []
 unvisited = []
-
 path = []
 
-x = 4
-y = 4
-last = x*y - 1
+x = 20
+last = x**2 - 1
+
+# colours
+white = (255,255,255)
+blue = (145, 163, 176)
+red = (203,65,84)
+black = (0,0,0)
+
+# *** global GUI variables ***
+generating = True
+clock = pygame.time.Clock()
+fps = 30
+
+wallOpposites = {
+  "left":"right",
+  "right":"left",
+  "top":"bottom",
+  "bottom":"top"
+}
+
 
 class Node:
+  size = 800 / x
 
   def __init__(self, nr):
     self.nr = nr
+
+    self.position = (Node.size * (nr % x), Node.size * (nr // x))
+
+    self.left,self.right,self.top,self.bottom = True
   
   # going to next unvisited node
   def next(self):
-    time.sleep(0.5)
     neighbourNodes = self.findNeighbours(self.nr)
-
-    print("current node:", self.nr)
-    nodenrs = []
-    for node in neighbourNodes:
-      nodenrs.append(node.nr)
-    print(nodenrs)
 
     if self in unvisited: # don't do if it had been backtracked to
       unvisited.remove(self)
       path.append(self)
+
+    if self in path:
+      allNodes[self.nr].background = red
+
+    self.draw()
 
     if not neighbourNodes:
       self.backtrack()
       return
 
     chosenNeighbour = self.chooseNeighbour(neighbourNodes)
+
+
+
     chosenNeighbour.next()
   
   def backtrack(self): # does .next() to the node before
     if not unvisited:
       self.finished()
       return
+    allNodes[self.nr].background = blue
     path.remove(self)
     path[-1].next()
     
@@ -70,17 +101,43 @@ class Node:
     return neighbours[index]
 
   @staticmethod
+  def draw():
+    for node in allNodes:
+      pygame.draw.rect(screen, node.background, (node.position[0], node.position[1], Node.size, Node.size))
+
+      if node.left:
+        pygame.draw.line(screen, black, node.position, (node.position[0], node.position[1] + size))
+
+
+  @staticmethod
   def finished():
+    global generating
     print("FINAL PATH")
     nodenrs = []
     for node in path:
       nodenrs.append(node.nr)
     print(nodenrs)
+    generating = False
 
-for nr in range(x*y):
+for nr in range(x**2):
   unvisited.append(Node(nr))
+  allNodes.append(Node(nr))
 
-unvisited[0].next()
+for node in allNodes:
+  node.background = black
+
+
+while True:
+  clock.tick(fps)
+  for event in pygame.event.get():
+    if event.type == pygame.QUIT:
+      pygame.quit()
+      quit()
+  if generating:
+    unvisited[0].next()
+  pygame.display.update()
+
+
 
 
 
