@@ -10,7 +10,7 @@ allNodes = []
 unvisited = []
 path = []
 
-x = 20
+x = 40
 last = x**2 - 1
 
 # colours
@@ -24,13 +24,6 @@ generating = True
 clock = pygame.time.Clock()
 fps = 30
 
-wallOpposites = {
-  "left":"right",
-  "right":"left",
-  "top":"bottom",
-  "bottom":"top"
-}
-
 
 class Node:
   size = 800 / x
@@ -40,7 +33,6 @@ class Node:
 
     self.position = (Node.size * (nr % x), Node.size * (nr // x))
 
-    self.left,self.right,self.top,self.bottom = True
   
   # going to next unvisited node
   def next(self):
@@ -50,9 +42,6 @@ class Node:
       unvisited.remove(self)
       path.append(self)
 
-    if self in path:
-      allNodes[self.nr].background = red
-
     self.draw()
 
     if not neighbourNodes:
@@ -61,6 +50,21 @@ class Node:
 
     chosenNeighbour = self.chooseNeighbour(neighbourNodes)
 
+    # removing the walls
+    wall = self.whichWall(chosenNeighbour)
+    for node in [self, chosenNeighbour]:
+      if wall == "left":
+        allNodes[self.nr].left = False
+        allNodes[chosenNeighbour.nr].right = False
+      elif wall == "right":
+        allNodes[self.nr].right = False
+        allNodes[chosenNeighbour.nr].left = False
+      elif wall == "top":
+        allNodes[self.nr].top = False
+        allNodes[chosenNeighbour.nr].bottom = False
+      elif wall == "bottom":
+        allNodes[self.nr].bottom = False
+        allNodes[chosenNeighbour.nr].top = False
 
 
     chosenNeighbour.next()
@@ -69,7 +73,6 @@ class Node:
     if not unvisited:
       self.finished()
       return
-    allNodes[self.nr].background = blue
     path.remove(self)
     path[-1].next()
     
@@ -100,31 +103,53 @@ class Node:
     index = random.randint(0, len(neighbours)-1)
     return neighbours[index]
 
+  def whichWall(self, node):
+    wall = ""
+    if node.nr - self.nr == x:
+      wall = "bottom"
+    elif node.nr - self.nr == -x:
+      wall = "top"
+    elif node.nr - self.nr == -1:
+      wall = "left"
+    elif node.nr - self.nr == 1:
+      wall = "right"
+
+    return wall
+
+
   @staticmethod
   def draw():
     for node in allNodes:
+      # draw each rectangle
       pygame.draw.rect(screen, node.background, (node.position[0], node.position[1], Node.size, Node.size))
 
+      # drawing each wall if it exists
       if node.left:
-        pygame.draw.line(screen, black, node.position, (node.position[0], node.position[1] + size))
+        pygame.draw.line(screen, black, node.position, (node.position[0], node.position[1] + Node.size))
+      if node.right:
+        pygame.draw.line(screen, black, (node.position[0] + Node.size, node.position[1]), (node.position[0] + Node.size, node.position[1] + Node.size))
+      if node.top:
+        pygame.draw.line(screen, black, node.position, (node.position[0] + Node.size, node.position[1]))
+      if node.bottom:
+        pygame.draw.line(screen, black, (node.position[0], node.position[1] + Node.size), (node.position[0] + Node.size, node.position[1] + Node.size))
 
 
   @staticmethod
   def finished():
     global generating
-    print("FINAL PATH")
-    nodenrs = []
-    for node in path:
-      nodenrs.append(node.nr)
-    print(nodenrs)
     generating = False
 
 for nr in range(x**2):
   unvisited.append(Node(nr))
   allNodes.append(Node(nr))
 
+# setting GUI variables on GUI version of nodes
 for node in allNodes:
-  node.background = black
+  node.background = blue
+  node.left = True
+  node.right = True
+  node.top = True
+  node.bottom = True
 
 
 while True:
