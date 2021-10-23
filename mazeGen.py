@@ -10,7 +10,7 @@ allNodes = []
 unvisited = []
 path = []
 
-x = 20
+x = int(input("Grid Size (x value): "))
 last = x**2 - 1
 
 # colours
@@ -22,7 +22,7 @@ black = (0,0,0)
 # *** global GUI variables ***
 generating = True
 clock = pygame.time.Clock()
-fps = 30
+fps = 60
 
 
 class Node:
@@ -161,8 +161,3 @@ while True:
     if current:
       current = current.next()
   pygame.display.update()
-
-
-
-
-
