@@ -10,7 +10,7 @@ allNodes = []
 unvisited = []
 path = []
 
-x = 40
+x = 20
 last = x**2 - 1
 
 # colours
@@ -45,8 +45,7 @@ class Node:
     self.draw()
 
     if not neighbourNodes:
-      self.backtrack()
-      return
+      return self.backtrack()
 
     chosenNeighbour = self.chooseNeighbour(neighbourNodes)
 
@@ -66,15 +65,14 @@ class Node:
         allNodes[self.nr].bottom = False
         allNodes[chosenNeighbour.nr].top = False
 
-
-    chosenNeighbour.next()
+    return chosenNeighbour
   
   def backtrack(self): # does .next() to the node before
     if not unvisited:
       self.finished()
       return
     path.remove(self)
-    path[-1].next()
+    return path[-1].next()
     
 
   def findNeighbours(self, nr): # finds a node's neighbours depending on its number
@@ -151,6 +149,7 @@ for node in allNodes:
   node.top = True
   node.bottom = True
 
+current = unvisited[0]
 
 while True:
   clock.tick(fps)
@@ -159,7 +158,8 @@ while True:
       pygame.quit()
       quit()
   if generating:
-    unvisited[0].next()
+    if current:
+      current = current.next()
   pygame.display.update()
 
 
