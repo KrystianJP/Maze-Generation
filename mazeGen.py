@@ -9,6 +9,7 @@ screen = pygame.display.set_mode((800,800))
 allNodes = []
 unvisited = []
 path = []
+finalPath = []
 
 x = int(input("Grid Size (x value): "))
 last = x**2 - 1
@@ -26,7 +27,7 @@ fps = 60
 
 
 class Node:
-  size = 800 / x
+  size = int(800 / x)
 
   def __init__(self, nr):
     self.nr = nr
@@ -36,11 +37,16 @@ class Node:
   
   # going to next unvisited node
   def next(self):
+
     neighbourNodes = self.findNeighbours(self.nr)
 
     if self in unvisited: # don't do if it had been backtracked to
       unvisited.remove(self)
       path.append(self)
+
+      if self.nr == last: # saving the path to the end
+        global finalPath
+        finalPath = path[:]
 
     self.draw()
 
@@ -131,6 +137,12 @@ class Node:
       if node.bottom:
         pygame.draw.line(screen, black, (node.position[0], node.position[1] + Node.size), (node.position[0] + Node.size, node.position[1] + Node.size))
 
+  @staticmethod
+  def pathDraw():
+    for node in finalPath:
+      allNodes[node.nr].background = red
+    Node.draw()
+
 
   @staticmethod
   def finished():
@@ -157,7 +169,12 @@ while True:
     if event.type == pygame.QUIT:
       pygame.quit()
       quit()
+  
+  keys = pygame.key.get_pressed()
+  if not generating:
+    if keys[pygame.K_SPACE]:
+      Node.pathDraw()
+
   if generating:
-    if current:
-      current = current.next()
+    current = current.next()
   pygame.display.update()
