@@ -5,15 +5,6 @@ sys.setrecursionlimit(10**6)
 pygame.init()
 screen = pygame.display.set_mode((800,800))
 
-# *** global maze gen variables ***
-allNodes = []
-unvisited = []
-path = []
-finalPath = []
-
-x = int(input("Grid Size (x value): "))
-last = x**2 - 1
-
 # colours
 white = (255,255,255)
 blue = (145, 163, 176)
@@ -25,14 +16,44 @@ generating = True
 clock = pygame.time.Clock()
 fps = 60
 
+x = int(input("Grid size: "))
+
+'''
+IN ORDER TO USE: YOU MUST USE THIS SKELETON:
+
+Node.mazeGeneration(10, 800, (0,0))
+
+current = Node.unvisited[0]
+
+while True:
+  clock.tick(fps)
+  for event in pygame.event.get():
+    if event.type == pygame.QUIT:
+      pygame.quit()
+      quit()
+  
+  keys = pygame.key.get_pressed()
+  if not Node.generating:
+    if keys[pygame.K_SPACE]:
+      Node.pathDraw()
+
+  if Node.generating:
+    current = current.next()
+  pygame.display.update()
+'''
+
 
 class Node:
-  size = int(800 / x)
+  allNodes = []
+  unvisited = []
+  path = []
+  finalPath = []
+  generating = True
 
   def __init__(self, nr):
     self.nr = nr
 
-    self.position = (Node.size * (nr % x), Node.size * (nr // x))
+    self.position = ((Node.size * (nr % Node.x) + Node.mazePosition[0]), (Node.size * (nr // Node.x)+Node.mazePosition[1]))
 
   
   # going to next unvisited node
@@ -40,13 +61,12 @@ class Node:
 
     neighbourNodes = self.findNeighbours(self.nr)
 
-    if self in unvisited: # don't do if it had been backtracked to
-      unvisited.remove(self)
-      path.append(self)
+    if self in Node.unvisited: # don't do if it had been backtracked to
+      Node.unvisited.remove(self)
+      Node.path.append(self)
 
-      if self.nr == last: # saving the path to the end
-        global finalPath
-        finalPath = path[:]
+      if self.nr == Node.last: # saving the path to the end
+        Node.finalPath = Node.path[:]
 
     self.draw()
 
@@ -59,26 +79,26 @@ class Node:
     wall = self.whichWall(chosenNeighbour)
     for node in [self, chosenNeighbour]:
       if wall == "left":
-        allNodes[self.nr].left = False
-        allNodes[chosenNeighbour.nr].right = False
+        Node.allNodes[self.nr].left = False
+        Node.allNodes[chosenNeighbour.nr].right = False
       elif wall == "right":
-        allNodes[self.nr].right = False
-        allNodes[chosenNeighbour.nr].left = False
+        Node.allNodes[self.nr].right = False
+        Node.allNodes[chosenNeighbour.nr].left = False
       elif wall == "top":
-        allNodes[self.nr].top = False
-        allNodes[chosenNeighbour.nr].bottom = False
+        Node.allNodes[self.nr].top = False
+        Node.allNodes[chosenNeighbour.nr].bottom = False
       elif wall == "bottom":
-        allNodes[self.nr].bottom = False
-        allNodes[chosenNeighbour.nr].top = False
+        Node.allNodes[self.nr].bottom = False
+        Node.allNodes[chosenNeighbour.nr].top = False
 
     return chosenNeighbour
   
   def backtrack(self): # does .next() to the node before
-    if not unvisited:
+    if not Node.unvisited:
       self.finished()
       return
-    path.remove(self)
-    return path[-1].next()
+    Node.path.remove(self)
+    return Node.path[-1].next()
     
 
   def findNeighbours(self, nr): # finds a node's neighbours depending on its number
@@ -86,18 +106,18 @@ class Node:
     nodeNeighbours = []
 
     # possible adjacent neighbours, accounting for bounds
-    if nr % x != 0:
+    if nr % Node.x != 0:
       neighbours.append(nr-1)
-    if nr % x != (x-1):
+    if nr % Node.x != (Node.x-1):
       neighbours.append(nr+1)
-    if last-nr >= x:
-      neighbours.append(nr+x)
-    if nr - x >= 0:
-      neighbours.append(nr-x)
+    if Node.last-nr >= Node.x:
+      neighbours.append(nr+Node.x)
+    if nr - Node.x >= 0:
+      neighbours.append(nr-Node.x)
 
 
     # turning those numbers into nodes
-    for node in unvisited:
+    for node in Node.unvisited:
       if node.nr in neighbours:
         nodeNeighbours.append(node)
         
@@ -109,9 +129,9 @@ class Node:
 
   def whichWall(self, node):
     wall = ""
-    if node.nr - self.nr == x:
+    if node.nr - self.nr == Node.x:
       wall = "bottom"
-    elif node.nr - self.nr == -x:
+    elif node.nr - self.nr == -(Node.x):
       wall = "top"
     elif node.nr - self.nr == -1:
       wall = "left"
@@ -123,7 +143,7 @@ class Node:
 
   @staticmethod
   def draw():
-    for node in allNodes:
+    for node in Node.allNodes:
       # draw each rectangle
       pygame.draw.rect(screen, node.background, (node.position[0], node.position[1], Node.size, Node.size))
 
@@ -138,30 +158,40 @@ class Node:
         pygame.draw.line(screen, black, (node.position[0], node.position[1] + Node.size), (node.position[0] + Node.size, node.position[1] + Node.size))
 
   @staticmethod
-  def pathDraw():
-    for node in finalPath:
-      allNodes[node.nr].background = red
+  def pathDraw():  # draws the path from 0 to last
+    for node in Node.finalPath:
+      Node.allNodes[node.nr].background = red
     Node.draw()
 
 
   @staticmethod
-  def finished():
-    global generating
-    generating = False
+  def finished():  # will need to change to reuse
+    Node.generating = False
 
-for nr in range(x**2):
-  unvisited.append(Node(nr))
-  allNodes.append(Node(nr))
+  @classmethod
+  def mazeGeneration(cls, xNodes, mazeSize=800, position=(0,0)):  # creating the maze depending on grid size
+    cls.x = xNodes
+    cls.last = xNodes**2 - 1
+    cls.size = int(mazeSize/ Node.x)
+    cls.mazePosition = position
+    for nr in range(xNodes**2):
+      Node.unvisited.append(Node(nr))
+      Node.allNodes.append(Node(nr))
 
-# setting GUI variables on GUI version of nodes
-for node in allNodes:
-  node.background = blue
-  node.left = True
-  node.right = True
-  node.top = True
-  node.bottom = True
+    # setting GUI variables on GUI version of nodes
+    for node in Node.allNodes:
+      node.background = blue
+      node.left = True
+      node.right = True
+      node.top = True
+      node.bottom = True
 
-current = unvisited[0]
+
+
+
+Node.mazeGeneration(x, 800, (0,0))
+
+current = Node.unvisited[0]
 
 while True:
   clock.tick(fps)
@@ -171,10 +201,10 @@ while True:
       quit()
   
   keys = pygame.key.get_pressed()
-  if not generating:
+  if not Node.generating:
     if keys[pygame.K_SPACE]:
       Node.pathDraw()
 
-  if generating:
+  if Node.generating:
     current = current.next()
   pygame.display.update()
